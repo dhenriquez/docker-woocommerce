@@ -5,9 +5,9 @@ version: '3.8'
 
 services:
   # Servicio de Base de Datos: MariaDB
-  # MariaDB es una bifurcación de MySQL recomendada y de alto rendimiento.[4, 5]
+  # MariaDB es una bifurcación de MySQL recomendada y de alto rendimiento.[1, 2]
   db:
-    image: mariadb:10.11 # Usando una versión LTS recomendada.[4]
+    image: mariadb:10.11 # Usando una versión LTS recomendada.[1]
     container_name: woo_mariadb
     restart: unless-stopped
     environment:
@@ -20,13 +20,14 @@ services:
     networks:
       - woo-network
     healthcheck:
-      test:
+      # CORRECCIÓN: Se añadió el comando de test para verificar si MariaDB está listo.
+      test: "mysql -u woo_user -P 3306 -p'tu_password_db_seguro' woocommerce_db -Bse 'SELECT 1'"
       interval: 10s
       timeout: 5s
       retries: 5
 
   # Servicio de Caché de Objetos: Redis
-  # Redis es la opción superior para el caché de objetos persistente en WooCommerce.[6, 7]
+  # Redis es la opción superior para el caché de objetos persistente en WooCommerce.[3, 4]
   redis:
     image: redis:7-alpine
     container_name: woo_redis
@@ -36,14 +37,15 @@ services:
     networks:
       - woo-network
     healthcheck:
-      test:
+      # CORRECCIÓN: Se añadió el comando de test para verificar si Redis está respondiendo.
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # Servicio de Aplicación: WordPress con PHP-FPM
   # Usamos la imagen FPM para que Nginx pueda actuar como proxy inverso.
-  # Se recomienda la última versión de PHP para rendimiento y seguridad.[4, 8]
+  # Se recomienda la última versión de PHP para rendimiento y seguridad.[1, 2]
   wordpress:
     image: wordpress:php8.3-fpm-alpine
     container_name: woo_wordpress
@@ -67,13 +69,13 @@ services:
       - woo-network
 
   # Servidor Web: Nginx
-  # Nginx es superior a Apache para manejar alta concurrencia y servir archivos estáticos.[9, 10, 11]
+  # Nginx es superior a Apache para manejar alta concurrencia y servir archivos estáticos.[5, 6]
   nginx:
     image: nginx:stable-alpine
     container_name: woo_nginx
     restart: unless-stopped
     ports:
-      - "7575:80"
+      - "7575:80" # Puerto modificado a 7575
       - "443:443" # Descomentar y configurar SSL para producción
     volumes:
       - wordpress_data:/var/www/html:ro # Montar como solo lectura
