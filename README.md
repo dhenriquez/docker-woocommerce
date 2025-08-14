@@ -61,21 +61,73 @@ Sigue estos pasos para poner en marcha tu entorno:
     docker-compose up -d
     ```
 
+## Instalación y Configuración
+
+Sigue estos pasos para poner en marcha tu entorno:
+
+1.  **Clona el repositorio:**
+    Abre tu terminal y clona el repositorio del proyecto desde GitHub:
+    ```bash
+    git clone [https://github.com/dhenriquez/docker-woocommerce.git](https://github.com/dhenriquez/docker-woocommerce.git)
+    cd docker-woocommerce
+    ```
+
+2.  **Personaliza las credenciales:**
+    Abre el archivo `docker-compose.yml` y **cambia las contraseñas por defecto** por valores seguros y únicos. Busca y reemplaza:
+
+    *   `tu_password_root_muy_seguro`
+    *   `tu_password_db_seguro`
+
+3.  **Configura tu dominio:**
+    Abre el archivo `nginx/default.conf` y reemplaza `tu-dominio.com www.tu-dominio.com` con tu dominio real. Para desarrollo local, puedes usar `localhost`.
+
+4.  **Inicia los servicios:**
+    En el directorio raíz del proyecto, ejecuta el siguiente comando para construir e iniciar los contenedores en segundo plano:
+
+    ```bash
+    docker-compose up -d
+    ```
+
 ## Configuración Post-Instalación en WordPress
 
-Una vez que los contenedores estén en funcionamiento, completa la configuración desde el panel de WordPress:
+Una vez que los contenedores estén en funcionamiento, completa la configuración desde el panel de WordPress.
 
 1.  **Instala WordPress:**
-    Abre tu navegador y navega a `http://localhost` (o tu dominio). Sigue las instrucciones del asistente de instalación de WordPress.
+    Abre tu navegador y navega a `http://localhost:7575` (o el puerto y dominio que hayas configurado). Sigue las instrucciones del asistente de instalación de WordPress.
 
-2.  **Instala el plugin de Caché de Redis:**
+2.  **Configura la Conexión a Redis en `wp-config.php`:**
+    Para que WordPress pueda comunicarse con el contenedor de Redis, es necesario añadir la configuración de conexión al archivo `wp-config.php`.
+
+    **a. Copia el archivo `wp-config.php` a tu máquina local:**
+    Ejecuta este comando en tu terminal desde la carpeta del proyecto:
+    ```bash
+    docker cp woo_wordpress:/var/www/html/wp-config.php./wp-config.php
+    ```
+
+    **b. Edita el archivo `wp-config.php`:**
+    Abre el archivo `wp-config.php` que acabas de copiar y añade el siguiente bloque de código justo antes de la línea `/* That's all, stop editing! Happy publishing. */`:
+
+    ```php
+    define('WP_REDIS_HOST', 'redis');
+    define('WP_REDIS_PORT', 6379);
+    define('WP_REDIS_TIMEOUT', 1);
+    define('WP_REDIS_READ_TIMEOUT', 1);
+    define('WP_REDIS_DATABASE', 0);
+    ```
+
+    **c. Copia el archivo modificado de vuelta al contenedor:**
+    ```bash
+    docker cp./wp-config.php woo_wordpress:/var/www/html/wp-config.php
+    ```
+
+3.  **Instala y Activa el Plugin de Redis:**
     *   En el panel de administración de WordPress, ve a **Plugins > Añadir nuevo**.
     *   Busca, instala y activa el plugin **"Redis Object Cache"**.
 
-3.  **Habilita el Caché de Objetos:**
+4.  **Habilita el Caché de Objetos:**
     *   Ve a **Ajustes > Redis**.
     *   Haz clic en el botón **"Enable Object Cache"**.
-    *   Debería conectarse correctamente y mostrar el estado "Connected". Las credenciales de conexión ya están preconfiguradas a través de las variables de entorno en el archivo `docker-compose.yml`.
+    *   Gracias a la configuración en `wp-config.php`, ahora debería conectarse correctamente y mostrar el estado "Connected".
 
 ¡Listo! Tu tienda WooCommerce ahora está funcionando sobre una pila de servidor optimizada para alto rendimiento.
 
