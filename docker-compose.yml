@@ -65,6 +65,7 @@ services:
       WP_REDIS_PORT: '6379'
     volumes:
       - wordpress_data:/var/www/html
+      - ./php-conf/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
     networks:
       - woo-network
 
