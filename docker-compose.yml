@@ -48,9 +48,14 @@ services:
       WORDPRESS_DB_USER: '${DB_USER}'
       WORDPRESS_DB_PASSWORD: '${DB_PASSWORD}'
       WORDPRESS_DB_NAME: '${DB_NAME}'
-      # Variables para el plugin Redis Object Cache
-      WP_REDIS_HOST: 'redis'
-      WP_REDIS_PORT: '6379'
+      # Inyección automática en wp-config.php (Redis y HTTPS Proxy)
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_REDIS_HOST', 'redis' );
+        define( 'WP_REDIS_PORT', 6379 );
+        define( 'WP_REDIS_DATABASE', 0 );
+        if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
+            $$_SERVER['HTTPS'] = 'on';
+        }
     volumes:
       - wordpress_data:/var/www/html
       - ./php-conf/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro

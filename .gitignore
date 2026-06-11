@@ -1,0 +1,10 @@
+# Variables de entorno
+.env
+
+# Archivos de configuración locales
+wp-config.php
+
+# Datos de persistencia locales (por si se mapean en la carpeta)
+/db_data/
+/wordpress_data/
+/redis_data/

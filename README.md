@@ -46,7 +46,7 @@ El proxy maestro se quedará a la espera de que levantes nuevas tiendas.
 
 ### Paso 2: Crear una Nueva Tienda
 Por cada tienda que quieras alojar en tu VPS, debes crear un clon o copiar los archivos base.
-1.  **Copia los archivos:** Crea una carpeta nueva en tu servidor (ej. `/var/www/tienda-1`) y copia dentro todos los archivos (`docker-compose.yml`, carpeta `nginx/`, `.env.example`, etc.) excluyendo la carpeta `proxy/`.
+1.  **Copia los archivos:** Crea una carpeta nueva en tu servidor (ej. `/var/www/tienda-1`) y copia dentro todos los archivos base (`docker-compose.yml`, `.env.example`, la carpeta `nginx/` y la carpeta `php-conf/`).
 2.  **Configura el entorno (`.env`):**
     Copia la plantilla y edítala:
     ```bash
