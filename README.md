@@ -1,161 +1,91 @@
-## Pila de Servidor WooCommerce de Alto Rendimiento con Docker
+## Pila de Servidor WooCommerce Multi-Sitio de Alto Rendimiento con Docker
 Repositorio del Proyecto: https://github.com/dhenriquez/docker-woocommerce
 
-Este proyecto proporciona una configuración de Docker Compose para desplegar una pila de servidor optimizada para WooCommerce, diseñada para ofrecer alto rendimiento, escalabilidad y un manejo impecable de las llamadas AJAX. La arquitectura se basa en las mejores prácticas de la industria y en una investigación exhaustiva sobre los componentes más eficientes para tiendas de comercio electrónico de alto tráfico.
+Este proyecto proporciona una configuración de Docker Compose diseñada para desplegar **múltiples** tiendas WooCommerce de alto rendimiento en un único servidor VPS, aislando completamente las bases de datos y orquestando el tráfico a través de un Proxy Inverso Maestro. La arquitectura se basa en las mejores prácticas de la industria y en una investigación exhaustiva sobre los componentes más eficientes.
 
-## Arquitectura
-La pila de software ha sido seleccionada cuidadosamente para maximizar la velocidad y la eficiencia en cada capa, desde el servidor web hasta la base de datos y el almacenamiento en caché.
+## Arquitectura Multi-Sitio
+La pila de software ha sido seleccionada cuidadosamente para aislar los entornos de los clientes sin sacrificar la velocidad:
 
-## Servidor Web: Nginx
-Se eligió Nginx por su arquitectura asíncrona y dirigida por eventos, que es fundamentalmente superior para manejar una gran cantidad de conexiones concurrentes con un bajo consumo de memoria. Esto es ideal para las numerosas y rápidas peticiones AJAX de una tienda WooCommerce activa.
-
-## Procesador PHP: PHP-FPM
-Utilizamos la imagen oficial de WordPress con PHP-FPM (FastCGI Process Manager) para que Nginx actúe como un proxy inverso de alto rendimiento. Se ha seleccionado una versión reciente de PHP (8.3) para aprovechar las últimas mejoras de rendimiento y seguridad.
-
-## Base de Datos: MariaDB
-MariaDB es un reemplazo directo y altamente compatible de MySQL, a menudo con ligeras ventajas de rendimiento. Es una opción robusta y recomendada oficialmente para WordPress y WooCommerce.   
-
-## Caché de Objetos: Redis
-Esta es la optimización más crítica para la velocidad de las operaciones dinámicas. Redis actúa como un caché de objetos persistente, almacenando los resultados de las consultas a la base de datos en la memoria RAM. Esto reduce drásticamente la carga sobre la base de datos y acelera significativamente las respuestas de la API y las llamadas AJAX, como la actualización del carrito.
+1.  **Proxy Inverso Maestro (`nginx-proxy`):** Se encarga de escuchar los puertos 80 y 443 del servidor. Lee las peticiones entrantes y las enruta automáticamente al contenedor Nginx interno correcto basándose en la variable de entorno `VIRTUAL_HOST`.
+2.  **Servidor Web Aislado (Nginx Interno):** Cada sitio tiene su propio contenedor Nginx que actúa de forma privada, sirviendo archivos estáticos y pasando llamadas PHP a su propio contenedor FPM.
+3.  **Procesador PHP (PHP-FPM 8.3):** Cada sitio usa una imagen oficial de WordPress con PHP-FPM, aislado por completo del resto de sitios.
+4.  **Bases de Datos Aisladas (MariaDB y Redis):** Cada sitio levanta su propia instancia de MariaDB (para base de datos relacional) y Redis (para caché de objetos) mediante volúmenes independientes.
 
 ## Requisitos Previos
-Asegúrate de tener instaladas las siguientes herramientas en tu sistema:
-
-(https://docs.docker.com/get-docker/)
-
-(https://docs.docker.com/compose/install/)
+Asegúrate de tener instaladas las siguientes herramientas en tu servidor:
+*   [Docker](https://docs.docker.com/get-docker/)
+*   [Docker Compose](https://docs.docker.com/compose/install/)
 
 ## Estructura de Archivos
-El proyecto tiene la siguiente estructura de directorios:
+El proyecto tiene la siguiente estructura orientada a plantillas:
+```text
 docker-woocommerce/
-├── docker-compose.yml
+├── proxy/
+│   └── docker-compose.yml   <-- El proxy maestro global
 ├── nginx/
-│   └── default.conf
-└── README.md
-
-
-## Instalación y Configuración
-
-Sigue estos pasos para poner en marcha tu entorno:
-
-1.  **Clona el repositorio:**
-    Abre tu terminal y clona el repositorio del proyecto desde GitHub:
-    ```bash
-    git clone [https://github.com/dhenriquez/docker-woocommerce.git](https://github.com/dhenriquez/docker-woocommerce.git)
-    cd docker-woocommerce
-    ```
-
-2.  **Personaliza las credenciales:**
-    Abre el archivo `docker-compose.yml` y **cambia las contraseñas por defecto** por valores seguros y únicos. Busca y reemplaza:
-
-    *   `tu_password_root_muy_seguro`
-    *   `tu_password_db_seguro`
-
-3.  **Configura tu dominio:**
-    Abre el archivo `nginx/default.conf` y reemplaza `tu-dominio.com www.tu-dominio.com` con tu dominio real. Para desarrollo local, puedes usar `localhost`.
-
-4.  **Inicia los servicios:**
-    En el directorio raíz del proyecto, ejecuta el siguiente comando para construir e iniciar los contenedores en segundo plano:
-
-    ```bash
-    docker-compose up -d
-    ```
+│   └── default.conf         <-- Nginx interno preconfigurado
+├── php-conf/
+│   └── custom.ini           <-- Configuración PHP
+├── wp-config.php            <-- Plantilla wp-config
+├── docker-compose.yml       <-- Plantilla de la tienda
+├── .env.example             <-- Plantilla de credenciales y dominio
+└── README.md                <-- Este archivo
+```
 
 ## Instalación y Configuración
 
-Sigue estos pasos para poner en marcha tu entorno:
+Sigue estos pasos para poner en marcha tu entorno multi-sitio:
 
-1.  **Clona el repositorio:**
-    Abre tu terminal y clona el repositorio del proyecto desde GitHub:
+### Paso 1: Levantar el Proxy Maestro
+Este paso **sólo se realiza una vez** en todo tu servidor VPS.
+```bash
+cd proxy
+docker-compose up -d
+```
+El proxy maestro se quedará a la espera de que levantes nuevas tiendas.
+
+### Paso 2: Crear una Nueva Tienda
+Por cada tienda que quieras alojar en tu VPS, debes crear un clon o copiar los archivos base.
+1.  **Copia los archivos:** Crea una carpeta nueva en tu servidor (ej. `/var/www/tienda-1`) y copia dentro todos los archivos (`docker-compose.yml`, carpeta `nginx/`, `.env.example`, etc.) excluyendo la carpeta `proxy/`.
+2.  **Configura el entorno (`.env`):**
+    Copia la plantilla y edítala:
     ```bash
-    git clone [https://github.com/dhenriquez/docker-woocommerce.git](https://github.com/dhenriquez/docker-woocommerce.git)
-    cd docker-woocommerce
+    cp .env.example .env
+    nano .env
     ```
-
-2.  **Personaliza las credenciales:**
-    Abre el archivo `docker-compose.yml` y **cambia las contraseñas por defecto** por valores seguros y únicos. Busca y reemplaza:
-
-    *   `tu_password_root_muy_seguro`
-    *   `tu_password_db_seguro`
-
-3.  **Configura tu dominio:**
-    Abre el archivo `nginx/default.conf` y reemplaza `tu-dominio.com www.tu-dominio.com` con tu dominio real. Para desarrollo local, puedes usar `localhost`.
-
-4.  **Inicia los servicios:**
-    En el directorio raíz del proyecto, ejecuta el siguiente comando para construir e iniciar los contenedores en segundo plano:
-
+    Configura el dominio (`VIRTUAL_HOST`) y las credenciales de base de datos (`DB_ROOT_PASSWORD`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`).
+3.  **Inicia los servicios de la tienda:**
     ```bash
     docker-compose up -d
     ```
+    *Nota: Docker automáticamente prefijará los contenedores y volúmenes con el nombre de tu carpeta, evitando colisiones de nombre con otras tiendas.*
 
 ## Configuración Post-Instalación en WordPress
 
-Una vez que los contenedores estén en funcionamiento, completa la configuración desde el panel de WordPress.
+Una vez que los contenedores estén en funcionamiento, completa la instalación:
 
 1.  **Instala WordPress:**
-    Abre tu navegador y navega a `http://localhost:7575` (o el puerto y dominio que hayas configurado). Sigue las instrucciones del asistente de instalación de WordPress.
-
-2.  **Configura la Conexión a Redis en `wp-config.php`:**
-    Para que WordPress pueda comunicarse con el contenedor de Redis, es necesario añadir la configuración de conexión al archivo `wp-config.php`.
-
-    **a. Copia el archivo `wp-config.php` a tu máquina local:**
-    Ejecuta este comando en tu terminal desde la carpeta del proyecto:
-    ```bash
-    docker cp woo_wordpress:/var/www/html/wp-config.php./wp-config.php
-    ```
-
-    **b. Edita el archivo `wp-config.php`:**
-    Abre el archivo `wp-config.php` que acabas de copiar y añade el siguiente bloque de código justo antes de la línea `/* That's all, stop editing! Happy publishing. */`:
-
-    ```php
-    define('WP_REDIS_HOST', 'redis');
-    define('WP_REDIS_PORT', 6379);
-    define('WP_REDIS_TIMEOUT', 1);
-    define('WP_REDIS_READ_TIMEOUT', 1);
-    define('WP_REDIS_DATABASE', 0);
-    ```
-
-    **c. Copia el archivo modificado de vuelta al contenedor:**
-    ```bash
-    docker cp./wp-config.php woo_wordpress:/var/www/html/wp-config.php
-    ```
-
-3.  **Instala y Activa el Plugin de Redis:**
-    *   En el panel de administración de WordPress, ve a **Plugins > Añadir nuevo**.
-    *   Busca, instala y activa el plugin **"Redis Object Cache"**.
-
-4.  **Habilita el Caché de Objetos:**
-    *   Ve a **Ajustes > Redis**.
-    *   Haz clic en el botón **"Enable Object Cache"**.
-    *   Gracias a la configuración en `wp-config.php`, ahora debería conectarse correctamente y mostrar el estado "Connected".
-
-¡Listo! Tu tienda WooCommerce ahora está funcionando sobre una pila de servidor optimizada para alto rendimiento.
+    Abre tu navegador en el dominio que definiste en `VIRTUAL_HOST`. Si tus DNS apuntan a la IP del VPS, Nginx-Proxy te mostrará el asistente de WordPress de inmediato.
+2.  **Plugin de Redis:**
+    *   Instala y activa el plugin **"Redis Object Cache"**.
+    *   Ve a **Ajustes > Redis** y habilita la caché. Gracias a las variables de entorno inyectadas en Docker, el plugin se conectará automáticamente.
 
 ## Gestión de los Contenedores
 
-*   **Para detener los servicios:**
+*   **Para detener una tienda:** (ejecutar dentro de su carpeta respectiva)
     ```bash
     docker-compose down
     ```
-*   **Para ver los logs en tiempo real (ej. para Nginx):**
+*   **Para ver los logs de una tienda:**
     ```bash
-    docker-compose logs -f nginx
-    ```
-*   **Para reconstruir las imágenes después de un cambio:**
-    ```bash
-    docker-compose up -d --build
+    docker-compose logs -f
     ```
 
 ## Consideraciones para Producción
 
-*   **SSL/HTTPS:** La configuración de Nginx proporcionada incluye una sección comentada para HTTPS. Para producción, es **esencial** que habilites SSL. Deberás obtener certificados SSL (por ejemplo, usando Let's Encrypt / Certbot), colocarlos en una carpeta (`ssl/`) y descomentar la sección del servidor en el puerto 443 en `nginx/default.conf`.
-
-*   **Copia de Seguridad (Backups):** Esta configuración utiliza volúmenes de Docker para persistir los datos de la base de datos (`db_data`) y los archivos de WordPress (`wordpress_data`). Es **crítico** que implementes una estrategia de copia de seguridad robusta para estos volúmenes para evitar la pérdida de datos.
-
-*   **Afinación de PHP:** Para un control más granular, puedes crear un archivo `php.ini` personalizado y montarlo en el contenedor de WordPress para ajustar directivas como `memory_limit`, `upload_max_filesize`, y `max_execution_time` según las necesidades específicas de tus plugins.[1, 3]
-
-*   **Correo Electrónico:** Por defecto, este entorno no está configurado para enviar correos electrónicos transaccionales (confirmaciones de pedido, etc.). Deberás configurar un servicio SMTP a través de un plugin de WordPress (como WP Mail SMTP) para asegurar una entrega de correo fiable.
+*   **SSL/HTTPS:** Nginx-Proxy soporta Let's Encrypt usando un contenedor compañero llamado `nginx-proxy-acme`. Puedes agregarlo a la carpeta `proxy` para automatizar los certificados SSL.
+*   **Copias de Seguridad:** Implementa rutinas para respaldar los volúmenes de Docker (`db_data` y `wordpress_data`) en cada tienda.
+*   **Correo Electrónico:** Por defecto, PHP en Docker no envía correos. Usa plugins como WP Mail SMTP.
 
 ## Licencia
-
 Este proyecto se distribuye bajo la licencia MIT.
