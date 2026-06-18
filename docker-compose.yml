@@ -11,17 +11,17 @@ services:
     container_name: woo_mariadb
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: 'tu_password_root_muy_seguro' # ¡CAMBIAR ESTO!
+      MYSQL_ROOT_PASSWORD: 'admin' # ¡CAMBIAR ESTO!
       MYSQL_DATABASE: 'woocommerce_db'
       MYSQL_USER: 'woo_user'
-      MYSQL_PASSWORD: 'tu_password_db_seguro' # ¡CAMBIAR ESTO!
+      MYSQL_PASSWORD: 'admin' # ¡CAMBIAR ESTO!
     volumes:
       - db_data:/var/lib/mysql
     networks:
       - woo-network
     healthcheck:
       # CORRECCIÓN: Se añadió el comando de test para verificar si MariaDB está listo.
-      test: "mysql -u woo_user -P 3306 -p'tu_password_db_seguro' woocommerce_db -Bse 'SELECT 1'"
+      test: "mysql -u woo_user -P 3306 -p'admin' woocommerce_db -Bse 'SELECT 1'"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,7 +58,7 @@ services:
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: 'woo_user'
-      WORDPRESS_DB_PASSWORD: 'tu_password_db_seguro' # ¡CAMBIAR ESTO!
+      WORDPRESS_DB_PASSWORD: 'admin' # ¡CAMBIAR ESTO!
       WORDPRESS_DB_NAME: 'woocommerce_db'
       # Variables para el plugin Redis Object Cache
       WP_REDIS_HOST: 'redis'
@@ -93,7 +93,7 @@ volumes:
   redis_data:
   wordpress_data:
 
-# Red para la comunicación entre contenedores
+    # Red para la comunicación entre contenedores
 networks:
   woo-network:
     driver: bridge
