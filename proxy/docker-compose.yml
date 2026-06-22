@@ -1,0 +1,36 @@
+version: '3.8'
+
+# ===================================================================
+# PROXY INVERSO MAESTRO (Nginx-Proxy)
+# Este entorno se levanta UNA SOLA VEZ en todo el VPS.
+# Redirige el tráfico automáticamente a todos tus contenedores
+# de WooCommerce basándose en la variable de entorno VIRTUAL_HOST.
+# ===================================================================
+
+services:
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    container_name: nginx-proxy-master
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Carpetas para Nginx Proxy
+      - proxy_conf:/etc/nginx/conf.d
+      - proxy_vhost:/etc/nginx/vhost.d
+      - proxy_html:/usr/share/nginx/html
+      # Conexión al socket de Docker para descubrir nuevos contenedores
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - proxy-network
+
+volumes:
+  proxy_conf:
+  proxy_vhost:
+  proxy_html:
+
+networks:
+  proxy-network:
+    name: nginx-proxy
+    driver: bridge
