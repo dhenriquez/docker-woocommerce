@@ -5,6 +5,7 @@ services:
   db:
     image: mariadb:10.11
     restart: unless-stopped
+    command: --innodb-buffer-pool-size=1G --max-connections=150
     environment:
       MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
       MYSQL_DATABASE: '${DB_NAME}'
@@ -24,6 +25,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
