@@ -1,5 +1,4 @@
 ## Stack para WooCommerce Multi-Sitio de Alto Rendimiento con Docker
-Repositorio del Proyecto: https://github.com/dhenriquez/docker-woocommerce
 
 Este proyecto proporciona una configuración de Docker Compose diseñada para desplegar **múltiples** tiendas WooCommerce de alto rendimiento en un único servidor VPS, aislando completamente las bases de datos y orquestando el tráfico a través de un Proxy Inverso Maestro. La arquitectura se basa en las mejores prácticas de la industria y cuenta con preconfiguraciones avanzadas para soportar alto tráfico de forma eficiente.
 
