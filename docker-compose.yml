@@ -70,7 +70,6 @@ services:
     restart: unless-stopped
     environment:
       - VIRTUAL_HOST=${VIRTUAL_HOST} # Detectado por el Proxy Maestro
-    # ¡YA NO SE EXPONEN PUERTOS AQUÍ!
     # ports:
     #   - "80:80"
     volumes:
@@ -88,7 +87,7 @@ volumes:
   redis_data:
   wordpress_data:
 
-# Redes
+    # Redes
 networks:
   woo-internal:
     driver: bridge # Red privada de esta tienda
