@@ -1,10 +1,10 @@
-## Pila de Servidor WooCommerce Multi-Sitio de Alto Rendimiento con Docker
+## Stack para WooCommerce Multi-Sitio de Alto Rendimiento con Docker
 Repositorio del Proyecto: https://github.com/dhenriquez/docker-woocommerce
 
 Este proyecto proporciona una configuración de Docker Compose diseñada para desplegar **múltiples** tiendas WooCommerce de alto rendimiento en un único servidor VPS, aislando completamente las bases de datos y orquestando el tráfico a través de un Proxy Inverso Maestro. La arquitectura se basa en las mejores prácticas de la industria y en una investigación exhaustiva sobre los componentes más eficientes.
 
 ## Arquitectura Multi-Sitio
-La pila de software ha sido seleccionada cuidadosamente para aislar los entornos de los clientes sin sacrificar la velocidad:
+El stack de software ha sido seleccionado cuidadosamente para aislar los entornos de los clientes sin sacrificar la velocidad:
 
 1.  **Proxy Inverso Maestro (`nginx-proxy`):** Se encarga de escuchar los puertos 80 y 443 del servidor. Lee las peticiones entrantes y las enruta automáticamente al contenedor Nginx interno correcto basándose en la variable de entorno `VIRTUAL_HOST`.
 2.  **Servidor Web Aislado (Nginx Interno):** Cada sitio tiene su propio contenedor Nginx que actúa de forma privada, sirviendo archivos estáticos y pasando llamadas PHP a su propio contenedor FPM.
