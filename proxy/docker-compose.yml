@@ -1,14 +1,16 @@
 version: '3.8'
 
 # ===================================================================
-# PROXY INVERSO MAESTRO (Nginx-Proxy)
+# PROXY INVERSO MAESTRO (Nginx-Proxy + ACME Companion)
 # Este entorno se levanta UNA SOLA VEZ en todo el VPS.
 # Redirige el tráfico automáticamente a todos tus contenedores
-# de WooCommerce basándose en la variable de entorno VIRTUAL_HOST.
+# de WooCommerce basándose en la variable de entorno VIRTUAL_HOST
+# y genera certificados SSL Let's Encrypt de manera automática.
 # ===================================================================
 
 services:
   nginx-proxy:
+    # DOC: Proxy inverso maestro que escucha en los puertos 80/443 y distribuye el tráfico según el dominio de entrada (VIRTUAL_HOST).
     image: nginxproxy/nginx-proxy:alpine
     container_name: nginx-proxy-master
     restart: always
@@ -20,8 +22,26 @@ services:
       - proxy_conf:/etc/nginx/conf.d
       - proxy_vhost:/etc/nginx/vhost.d
       - proxy_html:/usr/share/nginx/html
+      - proxy_certs:/etc/nginx/certs:ro
       # Conexión al socket de Docker para descubrir nuevos contenedores
       - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - proxy-network
+
+  acme-companion:
+    # DOC: Gestiona la solicitud, instalación y renovación automática de certificados SSL Let's Encrypt sin intervención manual.
+    image: nginxproxy/acme-companion
+    container_name: nginx-proxy-acme
+    restart: always
+    depends_on:
+      - nginx-proxy
+    volumes:
+      - proxy_certs:/etc/nginx/certs
+      - proxy_vhost:/etc/nginx/vhost.d
+      - proxy_html:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DEFAULT_EMAIL=admin@tudominio.com
     networks:
       - proxy-network
 
@@ -29,6 +49,8 @@ volumes:
   proxy_conf:
   proxy_vhost:
   proxy_html:
+  # DOC: Volumen persistente compartido donde se almacenan y conservan los certificados SSL generados.
+  proxy_certs:
 
 networks:
   proxy-network:

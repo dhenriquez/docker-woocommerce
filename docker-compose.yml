@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   # Servicio de Base de Datos: MariaDB
+  # DOC: Almacena de forma persistente y estructurada todas las tablas, productos, usuarios y pedidos de WordPress y WooCommerce.
   db:
     image: mariadb:10.11
     restart: unless-stopped
@@ -22,6 +23,7 @@ services:
       retries: 5
 
   # Servicio de Caché de Objetos: Redis
+  # DOC: Almacena datos volátiles en memoria RAM para acelerar consultas concurrentes y reducir el tiempo de carga del sitio.
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -37,6 +39,7 @@ services:
       retries: 5
 
   # Servicio de Aplicación: WordPress con PHP-FPM
+  # DOC: Motor dinámico del sitio con PHP-FPM 8.3 optimizado para procesar solicitudes y administrar la tienda WooCommerce.
   wordpress:
     image: wordpress:php8.3-fpm-alpine
     restart: unless-stopped
@@ -65,6 +68,7 @@ services:
       - woo-internal
 
   # Servidor Web: Nginx Interno
+  # DOC: Sirve contenido estático (imágenes, CSS, JS) y pasa código dinámico PHP a PHP-FPM usando microcaching de 1 segundo.
   nginx:
     image: nginx:stable-alpine
     restart: unless-stopped

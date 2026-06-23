@@ -81,7 +81,15 @@ Una vez que los contenedores estén en funcionamiento, completa la instalación:
 
 ## Consideraciones para Producción
 
-*   **SSL/HTTPS:** Nginx-Proxy soporta Let's Encrypt usando un contenedor compañero llamado `nginx-proxy-acme`. Puedes agregarlo a la carpeta `proxy` para automatizar los certificados SSL.
+*   **SSL/HTTPS (Let's Encrypt automático):** El proxy maestro ya incluye el contenedor compañero `nginx-proxy-acme` (`acme-companion`) configurado. Para activar SSL automático en tu tienda y dar soporte a múltiples dominios (como `mi-tienda.cl` y `www.mi-tienda.cl`), asegúrate de:
+    1. Apuntar los registros DNS de ambos dominios (con y sin `www`) a la IP de tu servidor VPS.
+    2. Configurar las variables en el `.env` de tu tienda separando los dominios por comas:
+       ```env
+       VIRTUAL_HOST=mi-tienda.cl,www.mi-tienda.cl
+       LETSENCRYPT_HOST=mi-tienda.cl,www.mi-tienda.cl
+       LETSENCRYPT_EMAIL=tu-email@tudominio.com
+       ```
+    El certificado se generará y renovará de forma completamente automatizada en unos minutos tras levantar la tienda.
 *   **Copias de Seguridad:** Implementa rutinas para respaldar los volúmenes de Docker (`db_data` y `wordpress_data`) en cada tienda.
 *   **Cron Real de WordPress (Recomendado para Alto Tráfico):**
     Por defecto, WordPress ejecuta tareas programadas cada vez que recibe visitas, lo que degrada el rendimiento. Para desactivarlo y usar un cron del sistema:
